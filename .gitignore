@@ -3,8 +3,12 @@ data/*
 
 outputs/
 
+*.png
+*.jpg
+
 .env
 mca_session.json
+auth_state.json
 
 __pycache__/
 .venv/
