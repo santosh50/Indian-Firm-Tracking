@@ -6,7 +6,7 @@ Data-processing scripts for an ongoing research project tracking Indian firms, u
 
 **Source:** Company Master Data from [data.gov.in](https://www.data.gov.in/), pulled per state via the OGD API. Each state file shares the same columns, including: `CIN`, `CompanyName`, `Registered_Office_Address`, `CompanyStatus`, `nic_code`, `CompanyIndustrialClassification`, `CompanyRegistrationdate_date`.
 
-To run any script, place the relevant state CSV(s) in the project folder (or update the path at the top of the script).
+To run any script, place the relevant state CSV(s) in the `data/` folder.
 
 ## Setup
 
