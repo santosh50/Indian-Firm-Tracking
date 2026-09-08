@@ -14,6 +14,7 @@ To run any script, place the relevant state CSV(s) in the `data/` folder.
 python3 -m venv venv
 source venv/bin/activate
 pip install -r requirements.txt
+playwright install firefox
 ```
 
 ## Notes
