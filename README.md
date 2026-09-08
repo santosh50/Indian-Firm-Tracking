@@ -1,4 +1,4 @@
-# Indian Firm Tracking — Data Pipeline
+# Indian Firm Tracking - Data Pipeline
 
 Data-processing scripts for an ongoing research project tracking Indian firms, using Registrar of Companies (RoC) master data.
 
