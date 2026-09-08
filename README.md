@@ -1,6 +1,6 @@
 # Indian Firm Tracking — Data Pipeline
 
-Data-processing scripts research project tracking Indian firms, using Registrar of Companies (RoC) master data.
+Data-processing scripts for an ongoing research project tracking Indian firms, using Registrar of Companies (RoC) master data.
 
 ## Data (not in this repo)
 
