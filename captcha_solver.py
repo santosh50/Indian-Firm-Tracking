@@ -5,7 +5,7 @@ import pytesseract
 from PIL import Image
 
 TOLERANCE = 100
-MAX_EDIT_DISTANCE = 1
+MAX_EDIT_DISTANCE = 2
 
 CONFUSION_MAP = {
     '0': ['o', 'O'], 'o': ['0', 'O'], 'O': ['0', 'o'],
@@ -15,6 +15,7 @@ CONFUSION_MAP = {
     '6': ['b'], 'b': ['6'],
  
     'i': ['l'], 'g': ['q'], 'q': ['g'],
+    'E': ['F'], 'F': ['E'],
  
     'c': ['C'], 'C': ['c'],
     'p': ['P'], 'P': ['p'],
@@ -22,6 +23,7 @@ CONFUSION_MAP = {
     'v': ['V'], 'V': ['v'],
     'w': ['W'], 'W': ['w'],
     'x': ['X'], 'X': ['x'],
+
 }
 
 def _isolate_black_text(image_path, tolerance=TOLERANCE):

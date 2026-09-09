@@ -19,8 +19,11 @@ def fetch_captcha_image(page):
         state="visible",
     )
 
-    page.wait_for_selector(spinner_selector, state="visible", timeout=2000)
-    page.wait_for_selector(spinner_selector, state="hidden", timeout=10000)
+    try:
+        page.wait_for_selector(spinner_selector, state="visible", timeout=2000)
+        page.wait_for_selector(spinner_selector, state="hidden", timeout=10000)
+    except Exception:
+        pass
         
     captcha_element.screenshot(path=IMG_PATH)
     img = Image.open(IMG_PATH)
@@ -62,7 +65,7 @@ def solve_captcha_with_retries(page, submit_button_text="Submit") -> bool:
                 captcha_input.click()
                 captcha_input.fill(candidate)
     
-                page.get_by_text(submit_button_text, exact=True).first.click(timeout=5000)
+                page.locator("button:visible", has_text=submit_button_text).first.click(timeout=5000)
             except Exception as e:
                 logger.error(f"[!] Could not submit candidate word'{candidate}': {e}")
     

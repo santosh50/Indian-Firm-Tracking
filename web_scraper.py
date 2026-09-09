@@ -5,6 +5,7 @@ from playwright.sync_api import sync_playwright
 from PIL import Image
 
 from captcha_flow import solve_captcha_with_retries
+from company_lookup import fetch_strikeoff_dates
 
 TEST_CIN = "U74999GJ1995PTC025739"
 AUTH_FILE = "auth_state.json"
@@ -102,6 +103,8 @@ def main():
         logger.info("Opening Company Lookup page")
         page.goto(MCA_COMPANY_LOOKUP_URL)
         page.wait_for_load_state("networkidle")
+
+        fetch_strikeoff_dates(page, TEST_CIN)
 
         input("Press Enter to close browser...")
         browser.close()
