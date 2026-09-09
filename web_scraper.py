@@ -10,6 +10,7 @@ TEST_CIN = "U74999GJ1995PTC025739"
 AUTH_FILE = "auth_state.json"
 MCA_HOME_URL = "https://www.mca.gov.in/content/mca/global/en/home.html"
 MCA_LOGIN_URL = "https://www.mca.gov.in/content/mca/global/en/foportal/fologin.html"
+MCA_COMPANY_LOOKUP_URL = "https://www.mca.gov.in/content/mca/global/en/mca/master-data/View-Companies-Directors-under-prosecution-V3.html"
 IMG_PATH = "captcha.png"
 MAX_CAPTCHA_REFRESHES = 3
 
@@ -131,7 +132,6 @@ def login(page, context):
                 return
 
     logger.info("[!] Exhausted all refreshes — login failed")
-    
 
 def main():
     with sync_playwright() as p:
@@ -151,13 +151,17 @@ def main():
 
         logger.info("Opening MCA home page")
         page.goto(MCA_HOME_URL)
-        page.wait_for_load_state("domcontentloaded")
+        page.wait_for_load_state("networkidle")
 
         if is_logged_in(page):
             logger.info("[+] Already logged in.")
         else:
             logger.info("[-] Login required")
             login(page, context)
+
+        logger.info("Opening Company Lookup page")
+        page.goto(MCA_COMPANY_LOOKUP_URL)
+        page.wait_for_load_state("networkidle")
 
         input("Press Enter to close browser...")
         browser.close()
