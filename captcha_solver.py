@@ -24,7 +24,6 @@ CONFUSION_MAP = {
     'x': ['X'], 'X': ['x'],
 }
 
-
 def _isolate_black_text(image_path, tolerance=TOLERANCE):
     img = cv2.imread(image_path, cv2.IMREAD_COLOR)
     if img is None:
