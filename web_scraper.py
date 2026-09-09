@@ -19,7 +19,7 @@ logging.basicConfig(
     datefmt="%Y-%m-%d %H:%M:%S",
     handlers=[
         logging.StreamHandler(),
-        logging.FileHandler("scraper.log"),
+        logging.FileHandler("scraper.log", mode="w"),
     ],
 )
 
