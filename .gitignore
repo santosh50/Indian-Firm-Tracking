@@ -9,6 +9,7 @@ outputs/
 .env
 mca_session.json
 auth_state.json
+*.log
 
 __pycache__/
 .venv/

@@ -8,12 +8,20 @@ TOLERANCE = 100
 MAX_EDIT_DISTANCE = 1
 
 CONFUSION_MAP = {
-    '0': ['o', 'O'], 'o': ['0'], 'O': ['0'],
-    's': ['5', 'S'], '5': ['s'], 'S': ['5', 's'],
-    'g': ['q'], 'q': ['g'],
-    'l': ['1', 'I'], '1': ['l', 'I'], 'I': ['1', 'l'],
-    'z': ['2'], '2': ['z'],
-    'b': ['6'], '6': ['b'],
+    '0': ['o', 'O'], 'o': ['0', 'O'], 'O': ['0', 'o'],
+    '5': ['s'], 's': ['5', 'S'], 'S': ['5', 's'],
+    '1': ['l', 'I'], 'l': ['1', 'I'], 'I': ['1', 'l'],
+    '2': ['z'], 'z': ['Z', '2'], 'Z': ['z'],
+    '6': ['b'], 'b': ['6'],
+ 
+    'i': ['l'], 'g': ['q'], 'q': ['g'],
+ 
+    'c': ['C'], 'C': ['c'],
+    'p': ['P'], 'P': ['p'],
+    'u': ['U'], 'U': ['u'],
+    'v': ['V'], 'V': ['v'],
+    'w': ['W'], 'W': ['w'],
+    'x': ['X'], 'X': ['x'],
 }
 
 
@@ -68,7 +76,6 @@ def solve_captcha(image_path):
 
 if __name__ == '__main__':
     # Quick manual test
-    result = solve_captcha("captcha2.png")
+    result = solve_captcha("captcha5.png")
     print(f"{len(result)} candidate(s):")
-    for c in result:
-        print(c)
+    print(*result)
