@@ -11,6 +11,7 @@ INPUT_DIR = "data/"
 OUTPUT_DIR = "outputs/"
 INPUT_CIN_COLUMN = "CIN"
 INPUT_STATUS_COLUMN = "CompanyStatus"
+BATCH_SIZE = 100
 
 def get_output_csv_path(input_csv):
     state_name = os.path.splitext(os.path.basename(input_csv))[0]
@@ -63,6 +64,11 @@ def process_strikeoff_batch(page, input_csv):
     )
 
     already_done = len(strikeoff_indices) - len(pending_indices)
+
+    if len(pending_indices) > BATCH_SIZE:
+        logger.info(f"Limiting this run to {BATCH_SIZE} of {len(pending_indices)} pending record(s)")
+        pending_indices = pending_indices[:BATCH_SIZE]
+    
     progress = tqdm(
         pending_indices,
         desc=f"{state_name} strike-off lookups",
