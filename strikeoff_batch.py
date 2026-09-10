@@ -1,6 +1,7 @@
 import os
 import logging
 import pandas as pd
+from tqdm import tqdm
 
 from company_lookup import fetch_strikeoff_dates
 
@@ -41,9 +42,12 @@ def process_strikeoff_batch(page, input_csv):
         f"{len(pending_indices)} pending"
     )
 
-    for count, idx in enumerate(pending_indices, start=1):
+    progress = tqdm(pending_indices, desc=f"{state_name} strike-off lookups", unit="company")
+
+    for idx in progress:
         cin = df.at[idx, INPUT_CIN_COLUMN]
-        logger.info(f"Processing {count}/{len(pending_indices)}: {cin}")
+        progress.set_postfix_str(cin)
+        logger.debug(f"Processing: {cin}")
 
         dates = fetch_strikeoff_dates(page, cin)
 
@@ -51,6 +55,7 @@ def process_strikeoff_batch(page, input_csv):
             df.at[idx, "Date of Last AGM"] = dates.get("date_of_last_agm")
             df.at[idx, "Date of Balance Sheet"] = dates.get("date_of_balance_sheet")
         else:
+            tqdm.write(f"Failed to fetch dates for CIN {cin}")
             logger.error(f"Failed to fetch dates for CIN {cin}")
 
         df.to_csv(output_csv, index=False)
