@@ -15,7 +15,7 @@ pip install -r requirements.txt
 playwright install firefox
 brew install tesseract
 
-python3 web_scraper.py
+python3 web_scraper.py <State_name>
 ```
 
 ## Notes
