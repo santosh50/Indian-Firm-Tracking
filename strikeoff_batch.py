@@ -12,11 +12,31 @@ OUTPUT_DIR = "outputs/"
 INPUT_CIN_COLUMN = "CIN"
 INPUT_STATUS_COLUMN = "CompanyStatus"
 
+def get_output_csv_path(input_csv):
+    state_name = os.path.splitext(os.path.basename(input_csv))[0]
+    return os.path.join(OUTPUT_DIR, f"{state_name}_strikeoff.csv")
+
+def has_pending_records(input_csv):
+    output_csv = get_output_csv_path(input_csv)
+ 
+    csv_to_check = output_csv if os.path.exists(output_csv) else input_csv
+    if not os.path.exists(csv_to_check):
+        logger.error(f"Input file not found: {input_csv}")
+        return False
+ 
+    df = pd.read_csv(csv_to_check)
+ 
+    if "Date of Last AGM" not in df.columns:
+        return (df[INPUT_STATUS_COLUMN] == "Strike Off").any()
+ 
+    strikeoff_mask = df[INPUT_STATUS_COLUMN] == "Strike Off"
+    pending_mask = strikeoff_mask & df["Date of Last AGM"].isna()
+    return pending_mask.any()
 
 def process_strikeoff_batch(page, input_csv):
     os.makedirs(OUTPUT_DIR, exist_ok=True)
+    output_csv = get_output_csv_path(input_csv)
     state_name = os.path.splitext(os.path.basename(input_csv))[0]
-    output_csv = os.path.join(OUTPUT_DIR, f"{state_name}_strikeoff.csv")
 
     if not os.path.exists(output_csv):
         if not os.path.exists(input_csv):

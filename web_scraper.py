@@ -5,7 +5,7 @@ from dotenv import load_dotenv
 from playwright.sync_api import sync_playwright
 
 from captcha_flow import solve_captcha_with_retries
-from strikeoff_batch import process_strikeoff_batch, INPUT_DIR
+from strikeoff_batch import process_strikeoff_batch, has_pending_records, INPUT_DIR
 
 AUTH_FILE = "auth_state.json"
 MCA_LOGIN_URL = "https://www.mca.gov.in/content/mca/global/en/foportal/fologin.html"
@@ -55,7 +55,7 @@ def login(page, context):
         page.get_by_text("Login", exact=True).first.click(timeout=5000)
     except Exception as e:
         logger.error(f"[!] Could not fill credentials: {e}")
-        return
+        return False
 
     if not solve_captcha_with_retries(page, submit_button_text="Continue"):
         return False
@@ -77,6 +77,10 @@ def main():
     parser.add_argument("state", help="State name, matching <State_Name>.csv in the data folder")
     args = parser.parse_args()
     input_csv = os.path.join(INPUT_DIR, f"{args.state}.csv")
+
+    if not has_pending_records(input_csv):
+        logger.info(f"No pending records for {args.state} — nothing to do")
+        return
 
     with sync_playwright() as p:
         logger.info("Launching Firefox browser")

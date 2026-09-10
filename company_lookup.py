@@ -7,10 +7,15 @@ logger = logging.getLogger(__name__)
 MCA_COMPANY_LOOKUP_URL = "https://www.mca.gov.in/content/mca/global/en/mca/master-data/MDS.html"
 
 def _extract_labeled_value(page, cell_id):
-    value = page.locator(f"#{cell_id}").inner_text().strip()
+    try:
+        value = page.locator(f"#{cell_id}").inner_text(timeout=3000).strip()
+    except Exception:
+        logger.debug(f"{cell_id} not found on page — treating as Not Available")
+        return "Not Available"
+
     if value in ("-", ""):
         value = "Not Available"
-    
+
     return value
 
 def fetch_strikeoff_dates(page, cin):
