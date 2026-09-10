@@ -11,7 +11,7 @@ INPUT_DIR = "data/"
 OUTPUT_DIR = "outputs/"
 INPUT_CIN_COLUMN = "CIN"
 INPUT_STATUS_COLUMN = "CompanyStatus"
-BATCH_SIZE = 100
+BATCH_SIZE = 1000
 
 def get_output_csv_path(input_csv):
     state_name = os.path.splitext(os.path.basename(input_csv))[0]
