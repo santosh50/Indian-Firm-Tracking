@@ -18,6 +18,9 @@ def process_strikeoff_batch(page, input_csv):
     output_csv = os.path.join(OUTPUT_DIR, f"{state_name}_strikeoff.csv")
 
     if not os.path.exists(output_csv):
+        if not os.path.exists(input_csv):
+            logger.error(f"Input file not found: {input_csv}")
+            return None
         logger.info(f"No existing output — creating working copy at {output_csv}")
         df = pd.read_csv(input_csv)
         df["Date of Last AGM"] = None

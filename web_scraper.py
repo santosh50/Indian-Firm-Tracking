@@ -1,12 +1,12 @@
 import os
+import argparse
 import logging
 from dotenv import load_dotenv
 from playwright.sync_api import sync_playwright
 
 from captcha_flow import solve_captcha_with_retries
-from company_lookup import fetch_strikeoff_dates
+from strikeoff_batch import process_strikeoff_batch, INPUT_DIR
 
-TEST_CIN = "U74999GJ1995PTC025739"
 AUTH_FILE = "auth_state.json"
 MCA_LOGIN_URL = "https://www.mca.gov.in/content/mca/global/en/foportal/fologin.html"
 MCA_COMPANY_LOOKUP_URL = "https://www.mca.gov.in/content/mca/global/en/mca/master-data/MDS.html"
@@ -73,6 +73,11 @@ def login(page, context):
     
 
 def main():
+    parser = argparse.ArgumentParser(description="Fetch strike-off dates for a state's companies")
+    parser.add_argument("state", help="State name, matching <State_Name>.csv in the data folder")
+    args = parser.parse_args()
+    input_csv = os.path.join(INPUT_DIR, f"{args.state}.csv")
+
     with sync_playwright() as p:
         logger.info("Launching Firefox browser")
         browser = p.firefox.launch(headless=False)
@@ -102,7 +107,7 @@ def main():
                 return
             page.goto(MCA_COMPANY_LOOKUP_URL)
 
-        fetch_strikeoff_dates(page, TEST_CIN)
+        process_strikeoff_batch(page, input_csv)
 
         input("Press Enter to close browser...")
         browser.close()
