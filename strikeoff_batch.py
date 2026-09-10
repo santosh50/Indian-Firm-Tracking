@@ -29,6 +29,9 @@ def process_strikeoff_batch(page, input_csv):
 
     df = pd.read_csv(output_csv)
 
+    df["Date of Last AGM"] = df["Date of Last AGM"].astype("object")
+    df["Date of Balance Sheet"] = df["Date of Balance Sheet"].astype("object")
+
     strikeoff_indices = df[df[INPUT_STATUS_COLUMN] == "Strike Off"].index
     pending_indices = [idx for idx in strikeoff_indices if pd.isna(df.at[idx, "Date of Last AGM"])]
 

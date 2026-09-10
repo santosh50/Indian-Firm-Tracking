@@ -61,7 +61,7 @@ if __name__ == '__main__':
     import os
     from playwright.sync_api import sync_playwright
  
-    TEST_CIN = "U74999GJ1995PTC025739"
+    TEST_CIN = "U52609AR2017PTC013503"
     AUTH_FILE = "auth_state.json"
     MCA_COMPANY_LOOKUP_URL = "https://www.mca.gov.in/content/mca/global/en/mca/master-data/MDS.html"
 
