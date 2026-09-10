@@ -7,7 +7,11 @@ logger = logging.getLogger(__name__)
 MCA_COMPANY_LOOKUP_URL = "https://www.mca.gov.in/content/mca/global/en/mca/master-data/MDS.html"
 
 def _extract_labeled_value(page, cell_id):
-    return page.locator(f"#{cell_id}").inner_text().strip()
+    value = page.locator(f"#{cell_id}").inner_text().strip()
+    if value in ("-", ""):
+        value = "Not Available"
+    
+    return value
 
 def fetch_strikeoff_dates(page, cin):
     if "MDS.html" not in page.url:
@@ -68,10 +72,9 @@ if __name__ == '__main__':
  
     with sync_playwright() as p:
         browser = p.firefox.launch(headless=False)
-        if not os.path.exists(AUTH_FILE):
-            logger.info("Auth file missing")
+        storage_state = AUTH_FILE if os.path.exists(AUTH_FILE) else None
         
-        context = browser.new_context(storage_state=AUTH_FILE)
+        context = browser.new_context(storage_state=storage_state)
         page = context.new_page()
 
         print("Opening MCA company lookup page")
