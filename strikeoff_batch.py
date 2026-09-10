@@ -62,7 +62,14 @@ def process_strikeoff_batch(page, input_csv):
         f"{len(pending_indices)} pending"
     )
 
-    progress = tqdm(pending_indices, desc=f"{state_name} strike-off lookups", unit="company")
+    already_done = len(strikeoff_indices) - len(pending_indices)
+    progress = tqdm(
+        pending_indices,
+        desc=f"{state_name} strike-off lookups",
+        unit="company",
+        total=len(strikeoff_indices),
+        initial=already_done,
+    )
 
     for idx in progress:
         cin = df.at[idx, INPUT_CIN_COLUMN]

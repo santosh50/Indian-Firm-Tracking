@@ -17,7 +17,7 @@ logging.basicConfig(
     datefmt="%Y-%m-%d %H:%M:%S",
     handlers=[
         logging.StreamHandler(),
-        logging.FileHandler("scraper.log", mode="w"),
+        logging.FileHandler("scraper.log"),
     ],
 )
 
@@ -113,7 +113,6 @@ def main():
 
         process_strikeoff_batch(page, input_csv)
 
-        input("Press Enter to close browser...")
         browser.close()
 
 if __name__ == "__main__":
