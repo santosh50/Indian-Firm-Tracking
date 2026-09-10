@@ -4,10 +4,15 @@ from captcha_flow import solve_captcha_with_retries
 
 logger = logging.getLogger(__name__)
 
+MCA_COMPANY_LOOKUP_URL = "https://www.mca.gov.in/content/mca/global/en/mca/master-data/MDS.html"
+
 def _extract_labeled_value(page, cell_id):
     return page.locator(f"#{cell_id}").inner_text().strip()
 
 def fetch_strikeoff_dates(page, cin):
+    if "MDS.html" not in page.url:
+        logger.info("Navigating to company lookup page")
+        page.goto(MCA_COMPANY_LOOKUP_URL, wait_until="domcontentloaded")
     logger.info(f"Fetching strike-off dates for CIN: {cin}")
 
     try:
