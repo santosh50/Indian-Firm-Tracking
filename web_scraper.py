@@ -6,6 +6,7 @@ from playwright.sync_api import sync_playwright
 from captcha_flow import solve_captcha_with_retries
 from company_lookup import fetch_strikeoff_dates
 
+TEST_CIN = "U74999GJ1995PTC025739"
 AUTH_FILE = "auth_state.json"
 MCA_LOGIN_URL = "https://www.mca.gov.in/content/mca/global/en/foportal/fologin.html"
 MCA_COMPANY_LOOKUP_URL = "https://www.mca.gov.in/content/mca/global/en/mca/master-data/MDS.html"
@@ -30,8 +31,11 @@ def is_logged_in(page) -> bool:
         return False
 
 def login(page, context):
-    logger.info("Opening MCA login page")
-    page.goto(MCA_LOGIN_URL, wait_until="domcontentloaded")
+    if "fologin.html" not in page.url:
+        logger.info("Not on login page — navigating there directly")
+        page.goto(MCA_LOGIN_URL, wait_until="domcontentloaded")
+    else:
+        logger.info("Site redirected to login page")
 
     load_dotenv()
     user_id = os.environ.get("MCA_USER_ID", "")

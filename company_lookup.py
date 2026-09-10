@@ -15,7 +15,7 @@ def fetch_strikeoff_dates(page, cin):
         cin_input.click()
         cin_input.fill(cin)
         page.wait_for_timeout(300)
-        cin_input.press("Enter")
+        page.locator("#searchicon").click()
     except Exception as e:
         logger.error(f"Could not enter CIN {cin}: {e}")
         return None

@@ -5,7 +5,7 @@ from PIL import Image
 from captcha_solver import solve_captcha
 
 IMG_PATH = "captcha.png"
-MAX_CAPTCHA_REFRESHES = 3
+MAX_CAPTCHA_REFRESHES = 5
 
 logger = logging.getLogger(__name__)
 
