@@ -2,16 +2,14 @@ import os
 import logging
 from dotenv import load_dotenv
 from playwright.sync_api import sync_playwright
-from PIL import Image
 
 from captcha_flow import solve_captcha_with_retries
 from company_lookup import fetch_strikeoff_dates
 
 TEST_CIN = "U74999GJ1995PTC025739"
 AUTH_FILE = "auth_state.json"
-MCA_HOME_URL = "https://www.mca.gov.in/content/mca/global/en/home.html"
 MCA_LOGIN_URL = "https://www.mca.gov.in/content/mca/global/en/foportal/fologin.html"
-MCA_COMPANY_LOOKUP_URL = "https://www.mca.gov.in/content/mca/global/en/mca/master-data/View-Companies-Directors-under-prosecution-V3.html"
+MCA_COMPANY_LOOKUP_URL = "https://www.mca.gov.in/content/mca/global/en/mca/master-data/MDS.html"
 
 logging.basicConfig(
     level=logging.INFO,
@@ -87,8 +85,8 @@ def main():
         )
         page = context.new_page()
 
-        logger.info("Opening MCA home page")
-        page.goto(MCA_HOME_URL)
+        logger.info("Opening MCA company lookup page")
+        page.goto(MCA_COMPANY_LOOKUP_URL)
         page.wait_for_load_state("domcontentloaded")
 
         if is_logged_in(page):
@@ -99,10 +97,7 @@ def main():
             if not logged_in:
                 logger.error("Login failed")
                 return
-
-        logger.info("Opening Company Lookup page")
-        page.goto(MCA_COMPANY_LOOKUP_URL)
-        page.wait_for_load_state("networkidle")
+            page.goto(MCA_COMPANY_LOOKUP_URL)
 
         fetch_strikeoff_dates(page, TEST_CIN)
 

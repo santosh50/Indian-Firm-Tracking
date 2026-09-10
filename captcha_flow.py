@@ -32,14 +32,7 @@ def fetch_captcha_image(page):
     logger.info(f"[+] CAPTCHA image saved to {IMG_PATH}")
 
 def captcha_failed(page):
-    try:
-        page.wait_for_selector(
-            "text=The captcha entered is incorrect.",
-            timeout=3000,
-        )
-        return True
-    except Exception:
-        return False
+    return page.locator("text=The captcha entered is incorrect.").count() > 0
 
 def refresh_captcha(page):
     try:
@@ -56,7 +49,7 @@ def solve_captcha_with_retries(page, submit_button_text="Submit") -> bool:
             return False
     
         candidates = solve_captcha(IMG_PATH)
-        logger.info(f"[+] {len(candidates)} candidate(s) to try: {candidates}")
+        logger.info(f"[+] {len(candidates)} captcha candidate(s) to try")
     
         for candidate in candidates:
             try:
@@ -66,8 +59,9 @@ def solve_captcha_with_retries(page, submit_button_text="Submit") -> bool:
                 captcha_input.fill(candidate)
     
                 page.locator("button:visible", has_text=submit_button_text).first.click(timeout=5000)
+                page.wait_for_load_state("networkidle")
             except Exception as e:
-                logger.error(f"[!] Could not submit candidate word'{candidate}': {e}")
+                logger.error(f"[!] Could not submit candidate word '{candidate}': {e}")
     
             if not captcha_failed(page):
                 page.wait_for_load_state("networkidle")
