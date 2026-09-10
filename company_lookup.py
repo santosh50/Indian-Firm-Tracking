@@ -50,3 +50,31 @@ def fetch_strikeoff_dates(page, cin):
     }
     logger.info(f"Extracted dates for CIN {cin}")
     return dates
+
+if __name__ == '__main__':
+    # Quick manual test for a single CIN: reuses the saved login session (auth_state.json)
+    import os
+    from playwright.sync_api import sync_playwright
+ 
+    TEST_CIN = "U74999GJ1995PTC025739"
+    AUTH_FILE = "auth_state.json"
+    MCA_COMPANY_LOOKUP_URL = "https://www.mca.gov.in/content/mca/global/en/mca/master-data/MDS.html"
+
+ 
+    with sync_playwright() as p:
+        browser = p.firefox.launch(headless=False)
+        if not os.path.exists(AUTH_FILE):
+            logger.info("Auth file missing")
+        
+        context = browser.new_context(storage_state=AUTH_FILE)
+        page = context.new_page()
+
+        print("Opening MCA company lookup page")
+        page.goto(MCA_COMPANY_LOOKUP_URL)
+        page.wait_for_load_state("domcontentloaded")
+ 
+        result = fetch_strikeoff_dates(page, TEST_CIN)
+        print(f"\nResult for {TEST_CIN}: {result}")
+
+        input("Press Enter to close browser...")
+        browser.close()

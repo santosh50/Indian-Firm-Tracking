@@ -6,7 +6,6 @@ from playwright.sync_api import sync_playwright
 from captcha_flow import solve_captcha_with_retries
 from company_lookup import fetch_strikeoff_dates
 
-TEST_CIN = "U74999GJ1995PTC025739"
 AUTH_FILE = "auth_state.json"
 MCA_LOGIN_URL = "https://www.mca.gov.in/content/mca/global/en/foportal/fologin.html"
 MCA_COMPANY_LOOKUP_URL = "https://www.mca.gov.in/content/mca/global/en/mca/master-data/MDS.html"
