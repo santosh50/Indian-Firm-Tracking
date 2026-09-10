@@ -4,6 +4,9 @@ from captcha_flow import solve_captcha_with_retries
 
 logger = logging.getLogger(__name__)
 
+def _extract_labeled_value(page, cell_id):
+    return page.locator(f"#{cell_id}").inner_text().strip()
+
 def fetch_strikeoff_dates(page, cin):
     logger.info(f"Fetching strike-off dates for CIN: {cin}")
 
@@ -11,6 +14,7 @@ def fetch_strikeoff_dates(page, cin):
         cin_input = page.get_by_placeholder("Enter Company/LLP name")
         cin_input.click()
         cin_input.fill(cin)
+        page.wait_for_timeout(300)
         cin_input.press("Enter")
     except Exception as e:
         logger.error(f"Could not enter CIN {cin}: {e}")
@@ -40,7 +44,9 @@ def fetch_strikeoff_dates(page, cin):
 
     page.wait_for_load_state("networkidle")
 
-    # # TODO: replace with real selector(s) once we know the result layout
-    # strikeoff_dates = None
-
-    # return strikeoff_dates
+    dates = {
+        "date_of_last_agm": _extract_labeled_value(page, "dateOfLastAGM"),
+        "date_of_balance_sheet": _extract_labeled_value(page, "DateofBalanceSheet"),
+    }
+    logger.info(f"Extracted dates for CIN {cin}")
+    return dates
