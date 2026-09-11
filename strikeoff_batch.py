@@ -1,5 +1,4 @@
 import os
-import glob
 import logging
 import pandas as pd
 from tqdm import tqdm
@@ -35,7 +34,7 @@ def has_pending_records(input_csv):
     pending_mask = strikeoff_mask & df["Date of Last AGM"].isna()
     return pending_mask.any()
 
-def process_strikeoff_batch(page, context, input_csv):
+def process_strikeoff_batch(page, context, input_csv, headless=False):
     os.makedirs(OUTPUT_DIR, exist_ok=True)
     output_csv = get_output_csv_path(input_csv)
     state_name = os.path.splitext(os.path.basename(input_csv))[0]
@@ -75,6 +74,7 @@ def process_strikeoff_batch(page, context, input_csv):
         initial=already_done,
         desc=f"{state_name} strike-off lookups",
         unit="company",
+        bar_format="{l_bar}{bar}| {n_fmt}/{total_fmt}{postfix}",
     )
 
     attempted = 0
@@ -83,10 +83,10 @@ def process_strikeoff_batch(page, context, input_csv):
     for idx in pending_indices:
         cin = df.at[idx, INPUT_CIN_COLUMN]
         attempted += 1
-        progress.set_postfix_str(f"{cin} ({succeeded}/{attempted} attempts succeeded)")
-        logger.debug(f"Processing: {cin}")
+        tqdm.write("-" * 70)
+        progress.set_postfix_str(f"({succeeded}/{attempted} attempts succeeded)")
 
-        dates = fetch_strikeoff_dates(page, context, cin)
+        dates = fetch_strikeoff_dates(page, context, cin, headless=headless)
 
         if dates:
             df.at[idx, "Date of Last AGM"] = dates.get("date_of_last_agm")
@@ -103,20 +103,3 @@ def process_strikeoff_batch(page, context, input_csv):
     logger.info(f"Saved results to {output_csv}")
 
     return df
-
-def process_all_states(page, context, input_dir=INPUT_DIR, output_dir=OUTPUT_DIR):
-    csv_files = sorted(glob.glob(os.path.join(input_dir, "*.csv")))
-    logger.info(f"Found {len(csv_files)} state CSV file(s) to process")
-
-    results = {}
-    for csv_path in csv_files:
-        state_name = os.path.splitext(os.path.basename(csv_path))[0]
-
-        logger.info(f"--- Processing state: {state_name} ---")
-        try:
-            results[state_name] = process_strikeoff_batch(page, context, csv_path)
-        except Exception as e:
-            logger.error(f"Failed to process {state_name}: {e}")
-            results[state_name] = None
-
-    return results

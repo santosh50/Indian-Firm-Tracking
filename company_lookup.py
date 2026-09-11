@@ -7,6 +7,18 @@ logger = logging.getLogger(__name__)
 
 MCA_COMPANY_LOOKUP_URL = "https://www.mca.gov.in/content/mca/global/en/mca/master-data/MDS.html"
 
+
+class FatalReAuthError(Exception):
+    """
+    Raised when the session expires mid-batch and re-login fails while
+    running headless — there's no visible window for OTP entry, so this
+    can never succeed on its own. Meant to propagate all the way up and
+    stop the batch, rather than be treated as a per-CIN failure that
+    just gets retried (which would otherwise silently repeat forever).
+    """
+    pass
+
+
 def _extract_labeled_value(page, cell_id):
     try:
         value = page.locator(f"#{cell_id}").inner_text(timeout=3000).strip()
@@ -27,7 +39,7 @@ def _dismiss_lingering_modal(page):
     logger.warning("Lingering captcha modal detected — reloading page")
     page.reload(wait_until="domcontentloaded")
 
-def _ensure_on_lookup_page(page, context):
+def _ensure_on_lookup_page(page, context, headless=False):
     if "MDS.html" in page.url:
         return True
 
@@ -39,6 +51,11 @@ def _ensure_on_lookup_page(page, context):
 
     logger.warning("Session expired mid-batch — redirected away from lookup page. Re-authenticating")
     if not login(page, context):
+        if headless:
+            raise FatalReAuthError(
+                "Re-authentication failed while running headless — OTP entry "
+                "requires a visible window. Rerun without --headless to log in manually."
+            )
         logger.error("Re-authentication failed")
         return False
 
@@ -50,8 +67,8 @@ def _ensure_on_lookup_page(page, context):
 
     return True
 
-def fetch_strikeoff_dates(page, context, cin):
-    if not _ensure_on_lookup_page(page, context):
+def fetch_strikeoff_dates(page, context, cin, headless=False):
+    if not _ensure_on_lookup_page(page, context, headless=headless):
         return None
 
     _dismiss_lingering_modal(page)
@@ -74,9 +91,10 @@ def fetch_strikeoff_dates(page, context, cin):
         return None
 
     try:
-        page.get_by_text(cin, exact=True).first.click(timeout=5000)
+        page.get_by_text(cin, exact=True).first.click(timeout=15000)
         page.wait_for_load_state("networkidle")
     except Exception as e:
+        page.screenshot(path=f"debug_fail_cinlink_{cin}.png", full_page=True)
         logger.error(f"Could not click CIN link for {cin}: {e}")
         return None
 
@@ -89,6 +107,15 @@ def fetch_strikeoff_dates(page, context, cin):
             return None
     else:
         logger.info("No second captcha — proceeding directly")
+
+    page.wait_for_load_state("networkidle")
+
+    try:
+        page.wait_for_url("**/company-master-info.html", timeout=15000)
+    except Exception as e:
+        page.screenshot(path=f"debug_fail_masterinfo_{cin}.png", full_page=True)
+        logger.error(f"Master data detail page did not load for CIN {cin}: {e}")
+        return None
 
     page.wait_for_load_state("networkidle")
 
