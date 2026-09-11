@@ -56,7 +56,7 @@ def solve_captcha_with_retries(page, submit_button_text="Submit") -> bool:
                 captcha_input = page.locator("input[type='text']:visible").last
     
                 captcha_input.click()
-                captcha_input.fill(candidate)
+                captcha_input.press_sequentially(candidate, delay=100)
     
                 page.locator("button:visible", has_text=submit_button_text).first.click(timeout=5000)
                 page.wait_for_load_state("networkidle")

@@ -1,4 +1,5 @@
 import os
+import glob
 import logging
 import pandas as pd
 from tqdm import tqdm
@@ -70,16 +71,19 @@ def process_strikeoff_batch(page, context, input_csv):
         pending_indices = pending_indices[:BATCH_SIZE]
 
     progress = tqdm(
-        pending_indices,
-        desc=f"{state_name} strike-off lookups",
-        unit="company",
         total=len(strikeoff_indices),
         initial=already_done,
+        desc=f"{state_name} strike-off lookups",
+        unit="company",
     )
 
-    for idx in progress:
+    attempted = 0
+    succeeded = 0
+
+    for idx in pending_indices:
         cin = df.at[idx, INPUT_CIN_COLUMN]
-        progress.set_postfix_str(cin)
+        attempted += 1
+        progress.set_postfix_str(f"{cin} ({succeeded}/{attempted} attempts succeeded)")
         logger.debug(f"Processing: {cin}")
 
         dates = fetch_strikeoff_dates(page, context, cin)
@@ -87,12 +91,32 @@ def process_strikeoff_batch(page, context, input_csv):
         if dates:
             df.at[idx, "Date of Last AGM"] = dates.get("date_of_last_agm")
             df.at[idx, "Date of Balance Sheet"] = dates.get("date_of_balance_sheet")
+            succeeded += 1
+            progress.update(1)
         else:
             tqdm.write(f"Failed to fetch dates for CIN {cin}")
             logger.error(f"Failed to fetch dates for CIN {cin}")
 
         df.to_csv(output_csv, index=False)
 
+    progress.close()
     logger.info(f"Saved results to {output_csv}")
 
     return df
+
+def process_all_states(page, context, input_dir=INPUT_DIR, output_dir=OUTPUT_DIR):
+    csv_files = sorted(glob.glob(os.path.join(input_dir, "*.csv")))
+    logger.info(f"Found {len(csv_files)} state CSV file(s) to process")
+
+    results = {}
+    for csv_path in csv_files:
+        state_name = os.path.splitext(os.path.basename(csv_path))[0]
+
+        logger.info(f"--- Processing state: {state_name} ---")
+        try:
+            results[state_name] = process_strikeoff_batch(page, context, csv_path)
+        except Exception as e:
+            logger.error(f"Failed to process {state_name}: {e}")
+            results[state_name] = None
+
+    return results
