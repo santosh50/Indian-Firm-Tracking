@@ -19,22 +19,22 @@ def get_output_csv_path(input_csv):
 
 def has_pending_records(input_csv):
     output_csv = get_output_csv_path(input_csv)
- 
+
     csv_to_check = output_csv if os.path.exists(output_csv) else input_csv
     if not os.path.exists(csv_to_check):
         logger.error(f"Input file not found: {input_csv}")
         return False
- 
+
     df = pd.read_csv(csv_to_check)
- 
+
     if "Date of Last AGM" not in df.columns:
         return (df[INPUT_STATUS_COLUMN] == "Strike Off").any()
- 
+
     strikeoff_mask = df[INPUT_STATUS_COLUMN] == "Strike Off"
     pending_mask = strikeoff_mask & df["Date of Last AGM"].isna()
     return pending_mask.any()
 
-def process_strikeoff_batch(page, input_csv):
+def process_strikeoff_batch(page, context, input_csv):
     os.makedirs(OUTPUT_DIR, exist_ok=True)
     output_csv = get_output_csv_path(input_csv)
     state_name = os.path.splitext(os.path.basename(input_csv))[0]
@@ -68,7 +68,7 @@ def process_strikeoff_batch(page, input_csv):
     if len(pending_indices) > BATCH_SIZE:
         logger.info(f"Limiting this run to {BATCH_SIZE} of {len(pending_indices)} pending record(s)")
         pending_indices = pending_indices[:BATCH_SIZE]
-    
+
     progress = tqdm(
         pending_indices,
         desc=f"{state_name} strike-off lookups",
@@ -82,7 +82,7 @@ def process_strikeoff_batch(page, input_csv):
         progress.set_postfix_str(cin)
         logger.debug(f"Processing: {cin}")
 
-        dates = fetch_strikeoff_dates(page, cin)
+        dates = fetch_strikeoff_dates(page, context, cin)
 
         if dates:
             df.at[idx, "Date of Last AGM"] = dates.get("date_of_last_agm")

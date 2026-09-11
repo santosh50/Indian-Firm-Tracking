@@ -1,6 +1,7 @@
 import logging
 
 from captcha_flow import solve_captcha_with_retries
+from auth_login import login
 
 logger = logging.getLogger(__name__)
 
@@ -18,10 +19,43 @@ def _extract_labeled_value(page, cell_id):
 
     return value
 
-def fetch_strikeoff_dates(page, cin):
+def _dismiss_lingering_modal(page):
+    modal = page.locator("#captchaModal")
+    if modal.count() == 0 or not modal.first.is_visible():
+        return
+
+    logger.warning("Lingering captcha modal detected — reloading page")
+    page.reload(wait_until="domcontentloaded")
+
+def _ensure_on_lookup_page(page, context):
+    if "MDS.html" in page.url:
+        return True
+
+    logger.info("Navigating to company lookup page")
+    page.goto(MCA_COMPANY_LOOKUP_URL, wait_until="domcontentloaded")
+
+    if "MDS.html" in page.url:
+        return True
+
+    logger.warning("Session expired mid-batch — redirected away from lookup page. Re-authenticating")
+    if not login(page, context):
+        logger.error("Re-authentication failed")
+        return False
+
+    page.goto(MCA_COMPANY_LOOKUP_URL, wait_until="domcontentloaded")
+
     if "MDS.html" not in page.url:
-        logger.info("Navigating to company lookup page")
-        page.goto(MCA_COMPANY_LOOKUP_URL, wait_until="domcontentloaded")
+        logger.error("Still not on lookup page after re-authentication")
+        return False
+
+    return True
+
+def fetch_strikeoff_dates(page, context, cin):
+    if not _ensure_on_lookup_page(page, context):
+        return None
+
+    _dismiss_lingering_modal(page)
+
     logger.info(f"Fetching strike-off dates for CIN: {cin}")
 
     try:
@@ -47,7 +81,7 @@ def fetch_strikeoff_dates(page, cin):
         return None
 
     captcha_locator = page.locator("text=Enter Captcha")
- 
+
     if captcha_locator.count() > 0 and captcha_locator.first.is_visible():
         logger.info("Second captcha detected — solving")
         if not solve_captcha_with_retries(page, submit_button_text="Submit"):
@@ -62,31 +96,28 @@ def fetch_strikeoff_dates(page, cin):
         "date_of_last_agm": _extract_labeled_value(page, "dateOfLastAGM"),
         "date_of_balance_sheet": _extract_labeled_value(page, "DateofBalanceSheet"),
     }
-    logger.info(f"Extracted dates for CIN {cin}")
+    logger.info(f"Extracted dates for CIN {cin}: {dates}")
     return dates
 
 if __name__ == '__main__':
-    # Quick manual test for a single CIN: reuses the saved login session (auth_state.json)
     import os
     from playwright.sync_api import sync_playwright
- 
+
     TEST_CIN = "U52609AR2017PTC013503"
     AUTH_FILE = "auth_state.json"
-    MCA_COMPANY_LOOKUP_URL = "https://www.mca.gov.in/content/mca/global/en/mca/master-data/MDS.html"
 
- 
     with sync_playwright() as p:
         browser = p.firefox.launch(headless=False)
+
         storage_state = AUTH_FILE if os.path.exists(AUTH_FILE) else None
-        
         context = browser.new_context(storage_state=storage_state)
         page = context.new_page()
 
         print("Opening MCA company lookup page")
         page.goto(MCA_COMPANY_LOOKUP_URL)
         page.wait_for_load_state("domcontentloaded")
- 
-        result = fetch_strikeoff_dates(page, TEST_CIN)
+
+        result = fetch_strikeoff_dates(page, context, TEST_CIN)
         print(f"\nResult for {TEST_CIN}: {result}")
 
         input("Press Enter to close browser...")
