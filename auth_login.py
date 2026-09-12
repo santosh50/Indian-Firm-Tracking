@@ -48,7 +48,7 @@ def login(page, context):
     if not solve_captcha_with_retries(page, submit_button_text="Continue"):
         return False
 
-    logger.info("Waiting for OTP entry...")
+    logger.info("Waiting for OTP entry... (2 min timeout)")
     try:
         page.wait_for_url("**/application-history.html", timeout=120000)
     except Exception:
@@ -58,3 +58,41 @@ def login(page, context):
     context.storage_state(path=AUTH_FILE)
     logger.info("Login succeeded. Auth state saved")
     return True
+
+
+def main():
+    from playwright.sync_api import sync_playwright
+
+    logging.basicConfig(
+        level=logging.INFO,
+        format="%(asctime)s [%(levelname)s] %(module)s: %(message)s",
+        datefmt="%Y-%m-%d %H:%M:%S",
+    )
+
+    with sync_playwright() as p:
+        logger.info("Launching Firefox browser")
+        browser = p.firefox.launch(headless=False)
+
+        storage_state = AUTH_FILE if os.path.exists(AUTH_FILE) else None
+        context = browser.new_context(
+            storage_state=storage_state,
+            user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:128.0) Gecko/20100101 Firefox/128.0",
+            viewport={"width": 1440, "height": 900},
+            locale="en-IN",
+            timezone_id="Asia/Kolkata"
+        )
+        page = context.new_page()
+        page.goto(MCA_LOGIN_URL, wait_until="domcontentloaded")
+
+        if is_logged_in(page):
+            logger.info("Already logged in — auth file is still valid, nothing to do.")
+        elif login(page, context):
+            logger.info(f"Login successful. {AUTH_FILE} created/updated.")
+        else:
+            logger.error("Login failed.")
+
+        browser.close()
+
+
+if __name__ == "__main__":
+    main()

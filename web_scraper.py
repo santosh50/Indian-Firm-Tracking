@@ -1,21 +1,16 @@
 import os
+import sys
 import argparse
 import logging
-from tqdm import tqdm
 from playwright.sync_api import sync_playwright
+from tqdm import tqdm
 
-from auth_login import login, is_logged_in, AUTH_FILE
+from auth_login import is_logged_in, AUTH_FILE
 from strikeoff_batch import process_strikeoff_batch, has_pending_records, INPUT_DIR
-from company_lookup import FatalReAuthError
-
-MCA_COMPANY_LOOKUP_URL = "https://www.mca.gov.in/content/mca/global/en/mca/master-data/MDS.html"
+from company_lookup import FatalReAuthError, MCA_COMPANY_LOOKUP_URL
 
 
 class TqdmLoggingHandler(logging.Handler):
-    """Routes log records through tqdm.write() so console output doesn't
-    overlap the progress bar's line — tqdm clears the bar, prints the
-    message on its own line, then redraws the bar underneath."""
-
     def emit(self, record):
         try:
             msg = self.format(record)
@@ -38,24 +33,30 @@ logger = logging.getLogger(__name__)
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Fetch strike-off dates for a state's companies")
+    parser = argparse.ArgumentParser(
+        description="Fetch strike-off dates for a state's companies, using "
+                     "an existing auth file. Exits with an error if the "
+                     "auth file is missing or the session has expired."
+    )
     parser.add_argument("state", help="State name, matching <State_Name>.csv in the data folder")
-    parser.add_argument("--headless", action="store_true", help="Run browser headless (only safe if already logged in)")
+    parser.add_argument("--headless", action="store_true", help="Run browser headless")
     args = parser.parse_args()
     input_csv = os.path.join(INPUT_DIR, f"{args.state}.csv")
+
+    if not os.path.exists(AUTH_FILE):
+        logger.error(f"Auth file not found: {AUTH_FILE}. Log in manually first to create it.")
+        sys.exit(1)
 
     if not has_pending_records(input_csv):
         logger.info(f"No pending records for {args.state} — nothing to do")
         return
 
     with sync_playwright() as p:
-        logger.info("Launching Firefox browser")
+        logger.info(f"Launching Firefox browser (headless={args.headless})")
         browser = p.firefox.launch(headless=args.headless)
 
-        storage_state = AUTH_FILE if os.path.exists(AUTH_FILE) else None
-
         context = browser.new_context(
-            storage_state=storage_state,
+            storage_state=AUTH_FILE,
             user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:128.0) Gecko/20100101 Firefox/128.0",
             viewport={"width": 1440, "height": 900},
             locale="en-IN",
@@ -67,20 +68,22 @@ def main():
         page.goto(MCA_COMPANY_LOOKUP_URL)
         page.wait_for_load_state("domcontentloaded")
 
-        if is_logged_in(page):
-            logger.info("[+] Already logged in.")
-        else:
-            logger.info("[-] Not logged in. Login required")
-            logged_in = login(page, context)
-            if not logged_in:
-                logger.error("Login failed")
-                return
-            page.goto(MCA_COMPANY_LOOKUP_URL)
+        if not is_logged_in(page):
+            logger.error(
+                "Auth file present but session is invalid or expired. "
+                "Log in manually to refresh the auth file, then rerun this script."
+            )
+            browser.close()
+            sys.exit(1)
+
+        logger.info("[+] Session valid — already logged in.")
 
         try:
-            process_strikeoff_batch(page, context, input_csv, headless=args.headless)
+            process_strikeoff_batch(page, context, input_csv)
         except FatalReAuthError as e:
             logger.error(f"Stopping batch: {e}")
+            browser.close()
+            sys.exit(1)
 
         browser.close()
 

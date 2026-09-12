@@ -2,6 +2,7 @@ data/*
 !data/README.md
 
 outputs/
+captchas/
 
 *.png
 *.jpg

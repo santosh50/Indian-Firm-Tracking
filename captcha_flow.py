@@ -61,7 +61,6 @@ def solve_captcha_with_retries(page, submit_button_text="Submit") -> bool:
                 page.locator("button:visible", has_text=submit_button_text).first.click(timeout=5000)
                 page.wait_for_load_state("networkidle")
             except Exception as e:
-                page.screenshot(path=f"debug_captcha_fail_{candidate}.png", full_page=True)
                 logger.error(f"[!] Could not submit candidate word '{candidate}': {e}")
 
             if not captcha_failed(page):
